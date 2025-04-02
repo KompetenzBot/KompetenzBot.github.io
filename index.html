@@ -65,12 +65,29 @@
 let scanning = false;
 let barcodes = JSON.parse(localStorage.getItem("barcodes")) || [];
 
+// 📌 Start the camera feed
+function startCamera() {
+    let video = document.getElementById("scanner");
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+        .then(stream => {
+            video.srcObject = stream;
+            video.setAttribute("playsinline", "true");
+            video.play();
+            console.log("✅ Camera started successfully");
+            startScanner(); // Start Quagga once camera is ready
+        })
+        .catch(err => {
+            console.error("🚨 Camera access denied:", err);
+            alert("Please allow camera access in your browser settings.");
+        });
+}
+
+// 📌 Start barcode scanner
 function startScanner() {
     Quagga.init({
         inputStream: { 
             type: "LiveStream",
-            target: document.querySelector("#scanner"),
-            constraints: { facingMode: "environment" }
+            target: document.querySelector("#scanner")
         },
         decoder: { 
             readers: ["ean_reader", "upc_reader", "upc_a_reader"]
@@ -78,13 +95,15 @@ function startScanner() {
         locate: true
     }, function (err) {
         if (err) {
-            console.error("Scanner init failed:", err);
+            console.error("🚨 Scanner init failed:", err);
             return;
         }
+        console.log("✅ Scanner started successfully");
         Quagga.start();
     });
 }
 
+// 📌 Barcode detected
 Quagga.onDetected(function (result) {
     if (!scanning) return;
     scanning = false;
@@ -92,10 +111,12 @@ Quagga.onDetected(function (result) {
 
     let barcode = result.codeResult.code;
     let format = result.codeResult.format;
+    console.log(`📌 Detected barcode: ${barcode} (Format: ${format})`);
 
     // Convert EAN-13 to UPC-A if needed
     if (format === "ean_13" && barcode.length === 13 && barcode.startsWith("0")) {
         barcode = barcode.substring(1);
+        console.log(`ℹ️ Converted to UPC-A: ${barcode}`);
     }
 
     // Store barcode
@@ -105,41 +126,21 @@ Quagga.onDetected(function (result) {
     }
     localStorage.setItem("barcodes", JSON.stringify(barcodes));
     document.getElementById("quantity").value = "";
+    console.log(`✅ Stored barcode: ${barcode}`);
 });
 
+// 📌 Start scanning process
 function startScanning() {
     if (scanning) return;
     scanning = true;
     document.getElementById("scanButton").classList.add("scanning");
 }
 
-        Quagga.onDetected(function (result) {
-    if (!scanning) return;
-    scanning = false;
-    document.getElementById("scanButton").classList.remove("scanning");
-
-    let barcode = result.codeResult.code;
-    let format = result.codeResult.format;
-
-    // ✅ Debugging logs (check browser console when scanning)
-    console.log("Detected barcode:", barcode, "Format:", format);
-
-    // ✅ Ensure UPC-A is detected correctly
-    if (format === "ean_13" && barcode.length === 13 && barcode.startsWith("0")) {
-        console.log("Converting EAN-13 to UPC-A (Removing leading zero)");
-        barcode = barcode.substring(1); // Convert EAN-13 to UPC-A
-    }
-
-    let quantity = parseInt(document.getElementById("quantity").value) || 1;
-    for (let i = 0; i < quantity; i++) {
-        barcodes.push(barcode);
-    }
-    localStorage.setItem("barcodes", JSON.stringify(barcodes));
-    document.getElementById("quantity").value = "";
-
-    console.log("Stored barcode:", barcode);
-});
-
+// 📌 Start everything on page load
+window.onload = () => {
+    console.log("📌 Page loaded, starting camera...");
+    startCamera();
+};
 
 
 
