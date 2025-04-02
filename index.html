@@ -66,40 +66,42 @@
         let barcodes = JSON.parse(localStorage.getItem("barcodes")) || [];
 
 function startScanner() {
-    Quagga.init({
-        inputStream: { 
-            type: "LiveStream",
-            target: document.querySelector("#scanner"),
-            constraints: { 
-                facingMode: "environment"
-            }
-        },
-        decoder: { 
-            readers: ["ean_reader", "code_128_reader"],
-            multiple: false 
-        },
-        locate: true,
-        locator: {
-            patchSize: "medium", // Balanced speed & accuracy
-            halfSample: false // Use full image
-        },
-        frequency: 10 // Scan frequently
-    }, function (err) {
-        if (err) {
-            console.error("Quagga initialization failed:", err);
-            return;
-        }
-        console.log("Quagga started successfully");
-        Quagga.start();
-        
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-            .then(stream => {
-                let videoElement = document.getElementById("scanner");
-                videoElement.srcObject = stream;
-                videoElement.play();
-            })
-            .catch(err => console.error("Camera error:", err));
-    });
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+        .then(stream => {
+            let videoElement = document.getElementById("scanner");
+            videoElement.srcObject = stream;
+            videoElement.setAttribute("playsinline", "true"); 
+            videoElement.play();
+
+            setTimeout(() => {
+                Quagga.init({
+                    inputStream: { 
+                        type: "LiveStream",
+                        target: videoElement
+                    },
+                    decoder: { 
+                        readers: ["ean_reader", "ean_13_reader", "upc_reader", "upc_e_reader"]
+                    },
+                    locate: true,
+                    locator: {
+                        patchSize: "medium",
+                        halfSample: false
+                    },
+                    frequency: 10
+                }, function (err) {
+                    if (err) {
+                        console.error("Quagga initialization failed:", err);
+                        return;
+                    }
+                    console.log("Quagga started successfully");
+                    Quagga.start();
+                });
+            }, 500);
+        })
+        .catch(err => {
+            console.error("Camera permission denied:", err);
+            alert("Please allow camera access in Safari settings.");
+        });
 }
 
 
@@ -111,18 +113,27 @@ function startScanner() {
         }
 
         Quagga.onDetected(function (result) {
-            if (!scanning) return;
-            scanning = false;
-            document.getElementById("scanButton").classList.remove("scanning");
+    if (!scanning) return;
+    scanning = false;
+    document.getElementById("scanButton").classList.remove("scanning");
 
-            let barcode = result.codeResult.code;
-            let quantity = parseInt(document.getElementById("quantity").value) || 1;
-            for (let i = 0; i < quantity; i++) {
-                barcodes.push(barcode);
-            }
-            localStorage.setItem("barcodes", JSON.stringify(barcodes));
-            document.getElementById("quantity").value = "";
-        });
+    let barcode = result.codeResult.code;
+
+    // If a 13-digit EAN-13 starts with "0", it's likely a UPC-A
+    if (barcode.length === 13 && barcode.startsWith("0")) {
+        let upcCode = barcode.substring(1); // Remove leading zero
+        console.log("Detected UPC-A (from EAN-13):", upcCode);
+        barcode = upcCode;
+    }
+
+    let quantity = parseInt(document.getElementById("quantity").value) || 1;
+    for (let i = 0; i < quantity; i++) {
+        barcodes.push(barcode);
+    }
+    localStorage.setItem("barcodes", JSON.stringify(barcodes));
+    document.getElementById("quantity").value = "";
+});
+
 
         // Numpad Functions
         function numpadPress(num) {
