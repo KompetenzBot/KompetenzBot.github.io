@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Barcode Scanner PWA</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js');
+        }
+    </script>
+    <style>
+        #scanButton.scanning {
+            background-color: red;
+            color: white;
+        }
+        #scanner {
+            width: 100%;
+            height: 50vw; /* Makes the height half of the width */
+            object-fit: cover;
+            border: 2px solid black;
+        }
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 300px;
+            margin: 10px auto;
+        }
+        .numpad button {
+            padding: 20px;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Barcode Scanner</h1>
+    <video id="scanner" autoplay playsinline></video>
+    <input type="number" id="quantity" placeholder="Enter quantity (default 1)" readonly>
+    <button id="scanButton" onclick="startScanning()" style="width: 100%; padding: 20px; font-size: 20px; margin-top: 10px;">Scan</button>
+    
+    <!-- Numpad for entering quantity -->
+    <div class="numpad">
+        <button onclick="numpadPress(1)">1</button>
+        <button onclick="numpadPress(2)">2</button>
+        <button onclick="numpadPress(3)">3</button>
+        <button onclick="numpadPress(4)">4</button>
+        <button onclick="numpadPress(5)">5</button>
+        <button onclick="numpadPress(6)">6</button>
+        <button onclick="numpadPress(7)">7</button>
+        <button onclick="numpadPress(8)">8</button>
+        <button onclick="numpadPress(9)">9</button>
+        <button onclick="clearQuantity()">C</button>
+        <button onclick="numpadPress(0)">0</button>
+        <button onclick="confirmQuantity()">✔</button>
+    </div>
+
+    <a href="stored.html">View Stored Barcodes</a>
+
+    <script>
+        let scanning = false;
+        let barcodes = JSON.parse(localStorage.getItem("barcodes")) || [];
+
+function startScanner() {
+    Quagga.init({
+        inputStream: { 
+            type: "LiveStream",
+            target: document.querySelector("#scanner"),
+            constraints: { 
+                facingMode: "environment"
+            }
+        },
+        decoder: { 
+            readers: ["ean_reader", "code_128_reader"],
+            multiple: false 
+        },
+        locate: true,
+        locator: {
+            patchSize: "medium", // Balanced speed & accuracy
+            halfSample: false // Use full image
+        },
+        frequency: 10 // Scan frequently
+    }, function (err) {
+        if (err) {
+            console.error("Quagga initialization failed:", err);
+            return;
+        }
+        console.log("Quagga started successfully");
+        Quagga.start();
+        
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+            .then(stream => {
+                let videoElement = document.getElementById("scanner");
+                videoElement.srcObject = stream;
+                videoElement.play();
+            })
+            .catch(err => console.error("Camera error:", err));
+    });
+}
+
+
+
+        function startScanning() {
+            if (scanning) return;
+            scanning = true;
+            document.getElementById("scanButton").classList.add("scanning");
+        }
+
+        Quagga.onDetected(function (result) {
+            if (!scanning) return;
+            scanning = false;
+            document.getElementById("scanButton").classList.remove("scanning");
+
+            let barcode = result.codeResult.code;
+            let quantity = parseInt(document.getElementById("quantity").value) || 1;
+            for (let i = 0; i < quantity; i++) {
+                barcodes.push(barcode);
+            }
+            localStorage.setItem("barcodes", JSON.stringify(barcodes));
+            document.getElementById("quantity").value = "";
+        });
+
+        // Numpad Functions
+        function numpadPress(num) {
+            let input = document.getElementById("quantity");
+            input.value = (input.value || "") + num;
+        }
+
+        function clearQuantity() {
+            document.getElementById("quantity").value = "";
+        }
+
+        function confirmQuantity() {
+            let input = document.getElementById("quantity");
+            if (!input.value) {
+                input.value = "1"; // Default to 1 if empty
+            }
+        }
+
+        startScanner();
+    </script>
+</body>
+</html>

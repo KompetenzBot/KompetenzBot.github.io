@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stored Barcodes</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Stored Barcodes</h1>
+    <ul id="barcodeList"></ul>
+    <button onclick="clearBarcodes()">Clear All</button>
+	<button onclick="copyBarcodes()">Copy Barcodes</button>
+    <!-- Updated the link for "Back to Scanner" button -->
+    <a href="index.html"><button>Back to Scanner</button></a>
+    
+    <script>
+        function loadBarcodes() {
+            let barcodes = JSON.parse(localStorage.getItem("barcodes")) || [];
+            let list = document.getElementById("barcodeList");
+            list.innerHTML = "";
+            barcodes.forEach(code => {
+                let li = document.createElement("li");
+                li.textContent = code;
+                list.appendChild(li);
+            });
+        }
+        function clearBarcodes() {
+            localStorage.removeItem("barcodes");
+            loadBarcodes();
+        }
+		function copyBarcodes() {
+    let barcodes = JSON.parse(localStorage.getItem("barcodes")) || [];
+    if (barcodes.length === 0) {
+        alert("No barcodes to copy!");
+        return;
+    }
+
+    let barcodeText = barcodes.join("\n"); // Join with newlines
+    navigator.clipboard.writeText(barcodeText).then(() => {
+        alert("Barcodes copied to clipboard!");
+    }).catch(err => {
+        console.error("Failed to copy barcodes:", err);
+    });
+}
+
+		
+        loadBarcodes();
+    </script>
+</body>
+</html>
