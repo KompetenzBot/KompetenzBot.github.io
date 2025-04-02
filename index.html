@@ -65,7 +65,7 @@
         let scanning = false;
         let barcodes = JSON.parse(localStorage.getItem("barcodes")) || [];
 
-function startScanner() {
+        function startScanner() {
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
         .then(stream => {
             let videoElement = document.getElementById("scanner");
@@ -80,14 +80,14 @@ function startScanner() {
                         target: videoElement
                     },
                     decoder: { 
-                        readers: ["ean_reader", "ean_13_reader", "upc_reader", "upc_e_reader"]
+                        readers: ["ean_reader", "ean_13_reader", "upc_reader", "upc_e_reader", "code_128_reader"] // Added "code_128_reader" for more compatibility
                     },
                     locate: true,
                     locator: {
-                        patchSize: "medium",
+                        patchSize: "large", // Bigger search area for better accuracy
                         halfSample: false
                     },
-                    frequency: 10
+                    frequency: 5 // Slower but more stable scanning
                 }, function (err) {
                     if (err) {
                         console.error("Quagga initialization failed:", err);
@@ -119,11 +119,13 @@ function startScanner() {
 
     let barcode = result.codeResult.code;
 
+    // Log detected barcode format for debugging
+    console.log("Detected barcode:", barcode, "Format:", result.codeResult.format);
+
     // If a 13-digit EAN-13 starts with "0", it's likely a UPC-A
-    if (barcode.length === 13 && barcode.startsWith("0")) {
-        let upcCode = barcode.substring(1); // Remove leading zero
-        console.log("Detected UPC-A (from EAN-13):", upcCode);
-        barcode = upcCode;
+    if (barcode.length === 13 && barcode.startsWith("0") && result.codeResult.format === "ean_13") {
+        barcode = barcode.substring(1); // Remove leading zero to get UPC-A
+        console.log("Converted to UPC-A:", barcode);
     }
 
     let quantity = parseInt(document.getElementById("quantity").value) || 1;
@@ -133,6 +135,7 @@ function startScanner() {
     localStorage.setItem("barcodes", JSON.stringify(barcodes));
     document.getElementById("quantity").value = "";
 });
+
 
 
         // Numpad Functions
