@@ -80,14 +80,20 @@
                         target: videoElement
                     },
                     decoder: { 
-                        readers: ["ean_reader", "ean_13_reader", "upc_reader", "upc_e_reader", "code_128_reader"] // Added "code_128_reader" for more compatibility
+                        readers: [
+                            "ean_reader", 
+                            "ean_13_reader", 
+                            "upc_reader", 
+                            "upc_e_reader", 
+                            "upc_a_reader" // ✅ Explicitly enable UPC-A reader
+                        ] 
                     },
                     locate: true,
                     locator: {
-                        patchSize: "large", // Bigger search area for better accuracy
+                        patchSize: "large",
                         halfSample: false
                     },
-                    frequency: 5 // Slower but more stable scanning
+                    frequency: 5
                 }, function (err) {
                     if (err) {
                         console.error("Quagga initialization failed:", err);
@@ -106,6 +112,7 @@
 
 
 
+
         function startScanning() {
             if (scanning) return;
             scanning = true;
@@ -118,14 +125,15 @@
     document.getElementById("scanButton").classList.remove("scanning");
 
     let barcode = result.codeResult.code;
+    let format = result.codeResult.format;
 
-    // Log detected barcode format for debugging
-    console.log("Detected barcode:", barcode, "Format:", result.codeResult.format);
+    // ✅ Debugging logs (check browser console when scanning)
+    console.log("Detected barcode:", barcode, "Format:", format);
 
-    // If a 13-digit EAN-13 starts with "0", it's likely a UPC-A
-    if (barcode.length === 13 && barcode.startsWith("0") && result.codeResult.format === "ean_13") {
-        barcode = barcode.substring(1); // Remove leading zero to get UPC-A
-        console.log("Converted to UPC-A:", barcode);
+    // ✅ Ensure UPC-A is detected correctly
+    if (format === "ean_13" && barcode.length === 13 && barcode.startsWith("0")) {
+        console.log("Converting EAN-13 to UPC-A (Removing leading zero)");
+        barcode = barcode.substring(1); // Convert EAN-13 to UPC-A
     }
 
     let quantity = parseInt(document.getElementById("quantity").value) || 1;
@@ -134,7 +142,10 @@
     }
     localStorage.setItem("barcodes", JSON.stringify(barcodes));
     document.getElementById("quantity").value = "";
+
+    console.log("Stored barcode:", barcode);
 });
+
 
 
 
