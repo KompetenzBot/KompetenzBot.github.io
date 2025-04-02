@@ -62,62 +62,56 @@
     <a href="stored.html">View Stored Barcodes</a>
 
     <script>
-        let scanning = false;
-        let barcodes = JSON.parse(localStorage.getItem("barcodes")) || [];
+let scanning = false;
+let barcodes = JSON.parse(localStorage.getItem("barcodes")) || [];
 
-        function startScanner() {
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-        .then(stream => {
-            let videoElement = document.getElementById("scanner");
-            videoElement.srcObject = stream;
-            videoElement.setAttribute("playsinline", "true"); 
-            videoElement.play();
-
-            setTimeout(() => {
-                Quagga.init({
-                    inputStream: { 
-                        type: "LiveStream",
-                        target: videoElement
-                    },
-                    decoder: { 
-                        readers: [
-                            "ean_reader", 
-                            "ean_13_reader", 
-                            "upc_reader", 
-                            "upc_e_reader", 
-                            "upc_a_reader" // ✅ Explicitly enable UPC-A reader
-                        ] 
-                    },
-                    locate: true,
-                    locator: {
-                        patchSize: "large",
-                        halfSample: false
-                    },
-                    frequency: 5
-                }, function (err) {
-                    if (err) {
-                        console.error("Quagga initialization failed:", err);
-                        return;
-                    }
-                    console.log("Quagga started successfully");
-                    Quagga.start();
-                });
-            }, 500);
-        })
-        .catch(err => {
-            console.error("Camera permission denied:", err);
-            alert("Please allow camera access in Safari settings.");
-        });
+function startScanner() {
+    Quagga.init({
+        inputStream: { 
+            type: "LiveStream",
+            target: document.querySelector("#scanner"),
+            constraints: { facingMode: "environment" }
+        },
+        decoder: { 
+            readers: ["ean_reader", "upc_reader", "upc_a_reader"]
+        },
+        locate: true
+    }, function (err) {
+        if (err) {
+            console.error("Scanner init failed:", err);
+            return;
+        }
+        Quagga.start();
+    });
 }
 
+Quagga.onDetected(function (result) {
+    if (!scanning) return;
+    scanning = false;
+    document.getElementById("scanButton").classList.remove("scanning");
 
+    let barcode = result.codeResult.code;
+    let format = result.codeResult.format;
 
+    // Convert EAN-13 to UPC-A if needed
+    if (format === "ean_13" && barcode.length === 13 && barcode.startsWith("0")) {
+        barcode = barcode.substring(1);
+    }
 
-        function startScanning() {
-            if (scanning) return;
-            scanning = true;
-            document.getElementById("scanButton").classList.add("scanning");
-        }
+    // Store barcode
+    let quantity = parseInt(document.getElementById("quantity").value) || 1;
+    for (let i = 0; i < quantity; i++) {
+        barcodes.push(barcode);
+    }
+    localStorage.setItem("barcodes", JSON.stringify(barcodes));
+    document.getElementById("quantity").value = "";
+});
+
+function startScanning() {
+    if (scanning) return;
+    scanning = true;
+    document.getElementById("scanButton").classList.add("scanning");
+}
 
         Quagga.onDetected(function (result) {
     if (!scanning) return;
