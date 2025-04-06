@@ -40,9 +40,6 @@
 <body>
     <h1>Barcode Scanner</h1>
     <video id="scanner" autoplay playsinline></video>
-    <div id="overlay">
-        <div class="scan-box"></div>
-    </div>    
     <input type="number" id="quantity" placeholder="Enter quantity (default 1)" readonly>
     <button id="scanButton" onclick="startScanning()" style="width: 100%; padding: 20px; font-size: 20px; margin-top: 10px;">Scan</button>
     
@@ -93,12 +90,6 @@ function startScanner() {
         target: document.querySelector("#scanner"),
         constraints: {
             facingMode: "environment"
-        },
-        area: { // 👇 This defines the active scan zone
-            top: "25%",    // Start scanning 25% from the top
-            right: "25%",  // Stop scanning 25% before the right edge
-            left: "25%",   // Stop scanning 25% after the left edge
-            bottom: "25%"  // Stop scanning 25% before the bottom
         }
     },
     decoder: {

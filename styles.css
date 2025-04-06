@@ -43,23 +43,4 @@ button:hover {
 .numpad button:active {
     background-color: lightgray; /* Click effect */
 }
-#overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-}
-
-.scan-box {
-    position: absolute;
-    width: 50%;
-    height: 50%;
-    top: 25%;
-    left: 25%;
-    border: 2px dashed red;
-    box-sizing: border-box;
-    border-radius: 4px;
-}
 
