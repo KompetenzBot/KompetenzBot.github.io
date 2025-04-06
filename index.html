@@ -40,6 +40,9 @@
 <body>
     <h1>Barcode Scanner</h1>
     <video id="scanner" autoplay playsinline></video>
+    <div id="overlay">
+        <div class="scan-box"></div>
+    </div>    
     <input type="number" id="quantity" placeholder="Enter quantity (default 1)" readonly>
     <button id="scanButton" onclick="startScanning()" style="width: 100%; padding: 20px; font-size: 20px; margin-top: 10px;">Scan</button>
     
