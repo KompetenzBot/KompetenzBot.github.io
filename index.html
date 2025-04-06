@@ -90,10 +90,16 @@ function startScanner() {
         target: document.querySelector("#scanner"),
         constraints: {
             facingMode: "environment"
+        },
+        area: { // 👇 This defines the active scan zone
+            top: "25%",    // Start scanning 25% from the top
+            right: "25%",  // Stop scanning 25% before the right edge
+            left: "25%",   // Stop scanning 25% after the left edge
+            bottom: "25%"  // Stop scanning 25% before the bottom
         }
     },
     decoder: {
-        readers: ["ean_reader", "upc_reader"] // ✅ Only use supported readers
+        readers: ["ean_reader", "upc_reader"]
     },
     locate: true
 }, function (err) {
@@ -104,6 +110,7 @@ function startScanner() {
     console.log("✅ Scanner started");
     Quagga.start();
 });
+
 
 }
 
