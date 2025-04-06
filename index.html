@@ -85,22 +85,26 @@ function startCamera() {
 // 📌 Start barcode scanner
 function startScanner() {
     Quagga.init({
-        inputStream: { 
-            type: "LiveStream",
-            target: document.querySelector("#scanner")
-        },
-        decoder: { 
-            readers: ["ean_reader", "upc_reader", "upc_a_reader"]
-        },
-        locate: true
-    }, function (err) {
-        if (err) {
-            console.error("🚨 Scanner init failed:", err);
-            return;
+    inputStream: {
+        type: "LiveStream",
+        target: document.querySelector("#scanner"),
+        constraints: {
+            facingMode: "environment"
         }
-        console.log("✅ Scanner started successfully");
-        Quagga.start();
-    });
+    },
+    decoder: {
+        readers: ["ean_reader", "upc_reader"] // ✅ Only use supported readers
+    },
+    locate: true
+}, function (err) {
+    if (err) {
+        console.error("🚨 Scanner init failed:", err);
+        return;
+    }
+    console.log("✅ Scanner started");
+    Quagga.start();
+});
+
 }
 
 // 📌 Barcode detected
