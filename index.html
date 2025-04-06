@@ -97,7 +97,11 @@ function startScanner() {
     decoder: {
         readers: ["ean_reader", "upc_reader"]
     },
-    locate: true
+    locate: true,
+    locator: {
+        patchSize: "x-small", // More sensitive to angles and small barcodes
+        halfSample: false
+    },
 }, function (err) {
     if (err) {
         console.error("🚨 Scanner init failed:", err);
