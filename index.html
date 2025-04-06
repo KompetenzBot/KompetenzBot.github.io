@@ -111,25 +111,30 @@ function startScanner() {
 Quagga.onDetected(function (result) {
     if (!scanning) return;
 
-    const code = result.codeResult.code;
+    let code = result.codeResult.code;
     const format = result.codeResult.format;
 
-    // Only accept EAN-13 or UPC
-    if (format === "ean_13" || format === "upc") {
-        scanning = false;
-        document.getElementById("scanButton").classList.remove("scanning");
-
+    // Check for EAN-13 UPC-wrapped codes
+    if (format === "ean_13" && code.length === 13 && code.startsWith("0")) {
+        // Treat as UPC
+        code = code.substring(1);
+        console.log(`🔄 Converted EAN-13 to UPC-A: ${code}`);
+    } else {
         console.log(`📦 Scanned: ${code} [${format}]`);
-
-        let quantity = parseInt(document.getElementById("quantity").value) || 1;
-        for (let i = 0; i < quantity; i++) {
-            barcodes.push(code); // Save raw code as-is
-        }
-
-        localStorage.setItem("barcodes", JSON.stringify(barcodes));
-        document.getElementById("quantity").value = "";
     }
+
+    scanning = false;
+    document.getElementById("scanButton").classList.remove("scanning");
+
+    const quantity = parseInt(document.getElementById("quantity").value) || 1;
+    for (let i = 0; i < quantity; i++) {
+        barcodes.push(code);
+    }
+
+    localStorage.setItem("barcodes", JSON.stringify(barcodes));
+    document.getElementById("quantity").value = "";
 });
+
 
 
 // 📌 Start scanning process
